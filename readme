@@ -1,0 +1,67 @@
+Project: Asynchronous CSV Processing API
+
+About
+
+  This project is a REST API built with FastAPI, designed to process large CSV files asynchronously using Redis. 
+  It operates entirely within Docker containers for a consistent and environment-independent experience.
+  Unit Testing is implemented using Pytest.IT will run when the docker runs automatically
+
+  Key Features:
+
+  Asynchronous Processing: Leverages Redis queues to handle file processing efficiently without blocking the server.
+  Chunked Processing: Optimizes memory usage and performance by reading large CSV files in chunks.
+  Aggregation Logic: Processes song play data, aggregating plays by song and date, and generates a new CSV output.
+  RESTful API: Provides three endpoints for user interaction:
+    GET /: Checks server responsiveness.
+    POST /jobs: Uploads a CSV file, initiates processing, and returns information about the job.
+    GET /results/{file_name}: Downloads the processed output file using the path from the POST /jobs response.
+    GET /job_statuses/{job_id}: Retrieves the current status of a processing task using the ID obtained from the POST /jobs response.
+
+Running the Project
+
+Prerequisites:
+
+  Docker and Docker Compose installed (https://docs.docker.com/)
+  CSV file with song data to test it (already attatched file with name test_sample ) and test_sample_result that shows the actual output of the processing for demonstration.
+
+Build and Start the Services:
+
+  Navigate to the project directory in your terminal Run
+
+  ```docker-compose -f redis-docker-compose.yml up -d ```
+
+  to build and run both FastAPI and Redis containers in detached mode.
+  Wait a few seconds for the services to initialize.
+
+API Documentation and Testing:
+
+  Open http://127.0.0.1:8000/docs in your web browser to access the interactive API documentation (Swagger UI).
+  Explore the available endpoints and experiment with sending requests to test functionalities.
+  API Endpoints
+
+GET /
+
+  Description: Checks server availability.
+  Response: A simple message indicating the server is running.
+
+POST /jobs
+
+  Description: Uploads a CSV file, initiates asynchronous processing, and returns job details.
+  Request Body: A multipart form data request containing a file under the key file.
+  Response: JSON object with the following properties:
+    success: Boolean indicating successful file upload and processing initiation.
+    job_id: Unique identifier for the processing task.
+    output_file_path: Path to the generated output file (accessible through the GET /results/{file_name} endpoint).
+
+GET /results/{file_name}
+
+  Description: Downloads the output file generated from the processing task.
+  Path Parameter: file_name (the output file name obtained from the POST /jobs response).
+  Response: The processed CSV file content as a downloadable file.
+
+GET /job_statuses/{job_id}
+
+  Description: Retrieves the current status of a processing task.
+  Path Parameter: job_id (the unique identifier obtained from the POST /jobs response).
+  Response: JSON object with the following optional properties (depending on the processing stage):
+  status: String describing the current processing status (e.g., pending, processing, completed).

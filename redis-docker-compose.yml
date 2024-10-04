@@ -1,0 +1,61 @@
+version: "3.3"
+services:
+  redis:
+    image: redis:6.0.7
+    container_name: redis
+    restart: always
+    volumes:
+      - redis_volume_data:/data
+    ports:
+      - 6379:6379
+
+  redis_insight:
+    image: redislabs/redisinsight:1.14.0
+    container_name: redis_insight
+    restart: always
+    ports:
+      - 8001:8001
+    volumes:
+      - redis_insight_volume_data:/db
+
+  fastapi_app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: fastapi_app
+    restart: always
+    ports:
+      - 8000:8000
+    depends_on:
+      - redis
+    volumes:
+      - shared_tmp:/tmp
+
+  rq_worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: rq_worker
+    restart: always
+    depends_on:
+      - redis
+    command: rq worker --url redis://redis:6379/0 task_queue
+    volumes:
+      - shared_tmp:/tmp
+
+  test:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: fastapi_test
+    restart: "no"
+    depends_on:
+      - fastapi_app
+    volumes:
+      - shared_tmp:/tmp
+    command: ["pytest", "--disable-warnings"]
+
+volumes:
+  redis_volume_data:
+  redis_insight_volume_data:
+  shared_tmp:
